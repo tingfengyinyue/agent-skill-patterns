@@ -2,13 +2,26 @@
 
 [中文版文档 / Chinese Documentation](docs/zh/README.md)
 
-Production-tested patterns for building AI agent knowledge systems that **get smarter over time**.
+Patterns shaped by day-to-day internal use for building AI agent knowledge systems that **get smarter over time**.
 
 ---
 
 ## Why This Project?
 
 Most AI agent setups treat knowledge as static context — dump a bunch of docs into the prompt and hope for the best. This works until your knowledge base grows beyond what a context window can hold.
+
+### From Internal Practice to Reusable Patterns
+
+This architecture grew out of an internal tool used in day-to-day work, not a documentation-only experiment. After internal demonstrations, it was recommended across several teams, adopted in real workflows, and received positive feedback from users.
+
+In practice, it has helped:
+
+- turn recurring operational tasks into reusable, consistent skill workflows;
+- reduce repeated knowledge lookup and unnecessary context loading;
+- carry lessons from past incidents into future troubleshooting;
+- make team practices easier to share, reuse, and improve over time.
+
+This repository extracts the reusable architecture and patterns; it does not contain internal business data or environment-specific configuration.
 
 This project solves that with three architectural innovations:
 
