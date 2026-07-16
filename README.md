@@ -1,8 +1,8 @@
-# Skill Patterns
+# Agent Skill Patterns
 
 [中文版文档 / Chinese Documentation](docs/zh/README.md)
 
-Patterns shaped by day-to-day internal use for building AI agent knowledge systems that **get smarter over time**.
+Build AI agent skills that **recall experience, load knowledge efficiently, and improve over time**.
 
 ---
 
@@ -120,7 +120,7 @@ Seven principles guide every skill in this system:
 ### Repository Structure
 
 ```
-skill-patterns/
+agent-skill-patterns/
 ├── docs/                          # Design documentation
 │   ├── design-philosophy.md       # 7 principles in depth
 │   ├── spar-framework.md          # The SPAR cognitive loop

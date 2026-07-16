@@ -1,8 +1,8 @@
-# Skill Patterns
+# Agent Skill Patterns
 
 [English Documentation](../../README.md)
 
-一套来自日常内部实践的 AI Agent 知识系统构建模式——让 Agent **越用越聪明**。
+构建能够**召回经验、按需加载知识并持续改进**的 AI Agent Skill。
 
 ---
 
@@ -120,7 +120,7 @@ OM → "evidence.incidents: [...]"    (反向：为什么存在)
 ### 目录结构
 
 ```
-skill-patterns/
+agent-skill-patterns/
 ├── docs/                          # 设计文档
 │   ├── design-philosophy.md       # 7 条原则详解
 │   ├── spar-framework.md          # SPAR 认知循环
