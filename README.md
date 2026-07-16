@@ -10,9 +10,13 @@ Patterns shaped by day-to-day internal use for building AI agent knowledge syste
 
 Most AI agent setups treat knowledge as static context — dump a bunch of docs into the prompt and hope for the best. This works until your knowledge base grows beyond what a context window can hold.
 
-### From Internal Practice to Reusable Patterns
+### From My Own Pain Point to Reusable Patterns
 
-This architecture grew out of an internal tool used in day-to-day work, not a documentation-only experiment. After internal demonstrations, it was recommended across several teams, adopted in real workflows, and received positive feedback from users.
+I originally designed this architecture to solve a concrete problem in my own work: when taking ownership of many unfamiliar projects at once, I needed to understand their code structure, service relationships, and history quickly enough to diagnose and resolve production issues. The traditional approach meant repeatedly searching through code, documentation, and incident history, while very little of that work carried over to the next task.
+
+To address this, I designed and iterated on an internal tool in daily use: operational procedures became Skills; services, incidents, runbooks, and lessons learned became a connected knowledge base; and SPAR with Operational Memory made previous troubleshooting experience directly recallable in future tasks.
+
+It did not remain a documentation-only idea. After internal demonstrations, the tool was recommended across several teams, adopted in real workflows, and received positive feedback from users.
 
 In practice, it has helped:
 
