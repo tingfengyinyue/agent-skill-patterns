@@ -2,7 +2,7 @@
 
 [中文版文档 / Chinese Documentation](docs/zh/README.md)
 
-A collection of desensitized, production-tested skill templates for building AI agent knowledge systems.
+A collection of production-tested patterns for building AI agent knowledge systems.
 
 These patterns are extracted from a real-world operations platform where AI agents handle incident response, service monitoring, data reporting, and cross-service validation — running in production daily.
 
