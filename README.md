@@ -2,113 +2,31 @@
 
 [中文版文档 / Chinese Documentation](docs/zh/README.md)
 
-A collection of production-tested patterns for building AI agent knowledge systems.
+Production-tested patterns for building AI agent knowledge systems that **get smarter over time**.
 
-These patterns are extracted from a real-world operations platform where AI agents handle incident response, service monitoring, data reporting, and cross-service validation — running in production daily.
+---
 
-## Design Philosophy
+## Why This Project?
 
-Seven principles guide the design of every skill in this collection:
+Most AI agent setups treat knowledge as static context — dump a bunch of docs into the prompt and hope for the best. This works until your knowledge base grows beyond what a context window can hold.
 
-| # | Principle | Summary |
-|---|-----------|---------|
-| 1 | **Skills are agent manuals, not human docs** | Every skill has explicit triggers, parameters, numbered steps, and machine-parseable structure |
-| 2 | **Parallelism first** | Steps that can run concurrently are explicitly marked |
-| 3 | **Errors are first-class citizens** | Every skill includes an error handling table |
-| 4 | **State-aware: incremental > full** | State files track what changed; only process deltas |
-| 5 | **Temporal knowledge management** | All knowledge is timestamped, ordered, and lifecycle-managed |
-| 6 | **Token-efficient architecture** | JSON indexes for programmatic recall; read cheap summaries before expensive full pages |
-| 7 | **Layered processing (SPAR)** | Sense → Plan → Act → Reflect — a cognitive loop that compounds wisdom |
-
-→ [Full design philosophy documentation](docs/design-philosophy.md)
-
-## Repository Structure
-
-```
-skill-patterns/
-├── docs/                          # Design documentation
-│   ├── design-philosophy.md       # 7 principles in depth
-│   ├── spar-framework.md          # The SPAR cognitive loop
-│   ├── operational-memory-spec.md # How agents learn from experience
-│   ├── knowledge-base-architecture.md  # Multi-layer knowledge design
-│   ├── knowledge-graph-design.md  # ⭐ Token efficiency + cross-ref + temporal design
-│   └── token-efficiency.md        # Token-saving strategies
-│
-├── templates/                     # 5 skill pattern templates
-│   ├── 01-cli-wrapper/            # Wrap CLI tools with domain knowledge
-│   ├── 02-doc-maintainer/         # Auto-sync code → documentation
-│   ├── 03-cross-validator/        # Cross-reference validation
-│   ├── 04-workflow-engine/        # State-machine driven workflows
-│   └── 05-data-reporter/          # Query → compute → visualize
-│
-├── knowledge-base/                # Knowledge base scaffold
-│   ├── services/                  # Service documentation
-│   ├── incidents/                 # Event records
-│   ├── memory/operational/        # Operational Memory (lessons learned)
-│   └── runbooks/                  # Procedural knowledge
-│
-└── examples/                      # Complete runnable example
-    └── ops-troubleshooter/        # Full incident response skill
-```
-
-## Skill Pattern Templates
-
-### 01 - CLI Wrapper
-
-Wraps a CLI tool (cloud provider CLI, database client, log query tool) with:
-- Natural language interface
-- Environment-aware configuration mapping
-- Priority-based query strategies
-- Formatted output with next-step suggestions
-
-### 02 - Doc Maintainer
-
-Keeps knowledge base documentation in sync with source code:
-- Incremental scanning (only process repos with new commits)
-- Diff-path → doc-section mapping
-- State file tracks last scanned commit per service
-
-### 03 - Cross Validator
-
-Reads multiple documents and cross-references them for consistency:
-- Endpoint existence validation
-- Bidirectional dependency verification
-- Orphan detection (producers without consumers)
-
-### 04 - Workflow Engine
-
-State-machine driven operational workflows:
-- SPAR cognitive loop (Sense → Plan → Act → Reflect)
-- Task classification and routing
-- Operational Memory recall and creation
-- Structured output formats
-
-### 05 - Data Reporter
-
-Automated data collection, comparison, and visualization:
-- Parallel query execution (today vs yesterday)
-- Delta computation with change rates
-- Canvas/visualization integration
-
-## Core Innovation: Knowledge Graph for Agents
-
-The most distinctive feature of this architecture — a knowledge base designed as a **navigable graph** with three key properties:
+This project solves that with three architectural innovations:
 
 ### 1. Funnel Read — Load Only What You Need
 
-> The agent doesn't read the whole knowledge base. It filters first (cheap), then drills into matches (only if needed).
+The agent doesn't read the whole knowledge base. It filters first (cheap), then drills into matches (only if needed).
 
 ```
-JSON index (50 tokens) → matched OM entry (80 tokens) → service doc section (150 tokens)
-         ↓ filter                  ↓ if needed                    ↓ if needed
-   95% eliminated            direct answer found           full context loaded
+JSON index (50 tokens) → matched entry (80 tokens) → service doc section (150 tokens)
+         ↓ filter                ↓ if needed                   ↓ if needed
+   95% eliminated          direct answer found          full context loaded
 ```
 
-Typical knowledge loading: **130-280 tokens** vs 2000+ for naive approaches. The index acts as a table of contents — the agent reads it to decide what to open, not to open everything.
+**Result:** 130-280 tokens typical load vs 2000+ for naive approaches.
 
 ### 2. Two-Way Links — Navigate in Any Direction
 
-> Every relationship is stored on **both endpoints**. No matter where the agent is in the graph, it can find all related nodes directly — no file scanning needed.
+Every relationship is stored on **both endpoints**. No matter where the agent is in the graph, it can find all related nodes directly — no file scanning needed.
 
 ```
 Incident → "Created OM: om-xxx"        (forward: what was learned)
@@ -119,69 +37,137 @@ Service B → "called by Service A"       (backward: dependent)
 
 ### 3. Time Flows Both Ways — Past Informs Future
 
-> OM (Operational Memory) acts as a **temporal bridge**: it points backward to the event that taught the lesson, and forward to the future tasks that should apply it.
+Operational Memory (OM) acts as a **temporal bridge**: it points backward to the event that taught the lesson, and forward to the future tasks that should apply it.
 
 ```
 PAST                          PRESENT                        FUTURE
 [Incident: what happened] → [OM: the lesson] → [Next task: recall & apply]
-    evidence.incidents ──▶       ◀── trigger.symptoms match
 ```
 
-Knowledge has a lifecycle: born (incident) → distilled (OM, low confidence) → verified (medium) → battle-tested (high) → graduated (runbook) or deprecated.
+Knowledge has a lifecycle: born (incident) → distilled (OM) → verified → battle-tested → graduated to runbook — or deprecated if proven wrong.
 
 → [Full Knowledge Graph Design](docs/knowledge-graph-design.md)
 
 ---
 
-## Operational Memory System
+## How It Works
 
-Agents that **learn from experience** through the SPAR Reflect phase.
+### The SPAR Cognitive Loop
 
-Each task completion asks four questions:
-1. Did I take a detour?
-2. Was I faster than last time?
-3. Any unexpected pitfalls?
-4. Can I distill a "next time, do X" rule?
+Every task follows four phases — Sense, Plan, Act, Reflect:
 
-If yes → create an Operational Memory entry with:
-- Trigger conditions (task type, service, symptoms)
-- What went wrong before (`context_before`)
-- What to do better next time (`better_action`)
-- Confidence scoring (low → medium → high)
-- Hit counting (usage frequency)
-- Lifecycle management (active → deprecated → superseded → graduated)
+```
+Session 1: S → P(empty)      → A         → R(create OM-001)
+Session 2: S → P(recall OM)  → A(faster) → R(update OM-001)
+Session 3: S → P(recall OM)  → A(optimal) → R(nothing new)
+```
 
-→ [Full Operational Memory specification](docs/operational-memory-spec.md)
+The key insight: **Plan** recalls past lessons (prevents repeating mistakes), and **Reflect** captures new ones (feeds future Plan phases). This creates a compounding feedback loop — the agent gets better with every task.
+
+→ [Full SPAR Framework](docs/spar-framework.md)
+
+### Operational Memory
+
+The structured output of the Reflect phase. Each OM entry contains:
+
+- **Trigger conditions** — when to recall this lesson (task type + service + symptoms)
+- **`better_action`** — what to do next time (imperative, actionable)
+- **Confidence scoring** — low → medium → high (tracks reliability)
+- **Hit counting** — how often recalled and effective
+- **Lifecycle** — active → deprecated / superseded / graduated
+
+→ [Full Operational Memory Spec](docs/operational-memory-spec.md)
+
+---
+
+## Design Principles
+
+Seven principles guide every skill in this system:
+
+| # | Principle | Summary |
+|---|-----------|---------|
+| 1 | **Skills are agent manuals, not human docs** | Explicit triggers, typed parameters, numbered steps, templated output |
+| 2 | **Parallelism first** | Independent steps are explicitly marked as parallelizable |
+| 3 | **Errors are first-class citizens** | Every skill includes an error → resolution table |
+| 4 | **State-aware: incremental > full** | State files track progress; only process deltas |
+| 5 | **Temporal knowledge management** | Everything timestamped, lifecycle-managed, staleness-detected |
+| 6 | **Token-efficient architecture** | JSON indexes, layered reads, priority-based queries |
+| 7 | **Layered processing (SPAR)** | Sense → Plan → Act → Reflect compounds wisdom over time |
+
+→ [Design Philosophy in depth](docs/design-philosophy.md) · [Token Efficiency Strategies](docs/token-efficiency.md)
+
+---
+
+## What's Inside
+
+### Repository Structure
+
+```
+skill-patterns/
+├── docs/                          # Design documentation
+│   ├── design-philosophy.md       # 7 principles in depth
+│   ├── spar-framework.md          # The SPAR cognitive loop
+│   ├── operational-memory-spec.md # How agents learn from experience
+│   ├── knowledge-base-architecture.md  # Multi-layer knowledge design
+│   ├── knowledge-graph-design.md  # Token efficiency + cross-ref + temporal design
+│   ├── token-efficiency.md        # 6 token-saving strategies
+│   └── zh/                        # Chinese documentation (完整中文版)
+│
+├── templates/                     # 5 skill pattern templates
+│   ├── 01-cli-wrapper/            # Wrap CLI tools with domain knowledge
+│   ├── 02-doc-maintainer/         # Auto-sync code → documentation
+│   ├── 03-cross-validator/        # Cross-reference consistency checks
+│   ├── 04-workflow-engine/        # State-machine driven workflows + SPAR
+│   └── 05-data-reporter/          # Query → compute → visualize
+│
+├── knowledge-base/                # Ready-to-use scaffold
+│   ├── services/                  # Service documentation (auto-generated)
+│   ├── incidents/                 # Event records (per-incident)
+│   ├── memory/operational/        # Operational Memory (SPAR output)
+│   └── runbooks/                  # Procedural knowledge
+│
+└── examples/
+    └── ops-troubleshooter/        # Complete working example
+```
+
+### Skill Templates
+
+| Template | What it does | Key feature |
+|----------|-------------|-------------|
+| **01 CLI Wrapper** | Wraps CLI tools with natural language interface | Priority-based query strategy |
+| **02 Doc Maintainer** | Auto-syncs code changes → knowledge base docs | Incremental scanning with state file |
+| **03 Cross Validator** | Checks consistency across multiple documents | Bidirectional dependency verification |
+| **04 Workflow Engine** | State-machine driven operational workflows | Full SPAR integration + task routing |
+| **05 Data Reporter** | Parallel queries → delta computation → visualization | Today vs yesterday with change rates |
+
+### Knowledge Base Architecture
+
+Four layers with increasing detail and decreasing update frequency:
+
+```
+Layer 1: Services     — auto-generated from code (weekly)
+Layer 2: Runbooks     — manually authored procedures (as needed)
+Layer 3: Incidents    — event records (per-event)
+Layer 4: OM           — lessons learned with lifecycle (per-task)
+```
+
+→ [Knowledge Base Architecture](docs/knowledge-base-architecture.md)
+
+---
 
 ## Meta-Patterns
 
-Two recurring strategies observed across all operational memories:
+Recurring strategies observed across operational memories:
 
 > **Do the cheapest deterministic verification first; push expensive global searches to the end.**
 
-> **An API returning empty does not mean data doesn't exist — try a different dimension.**
+> **An API returning empty does not mean data doesn't exist — try a different query dimension.**
 
-## Glossary
-
-| Term | Meaning |
-|------|---------|
-| **Token** | The unit of text an LLM processes. More tokens consumed = less room for reasoning. Think of it as "desk space" |
-| **Context window** | The total amount of text an LLM can see at once — like a desk with limited surface area |
-| **Skill** | A structured markdown file that tells an AI agent exactly how to perform a specific task |
-| **OM (Operational Memory)** | A "lesson learned" entry — records what went wrong and what to do better next time |
-| **SPAR** | Sense → Plan → Act → Reflect. A cognitive loop that makes agents learn from experience |
-| **Funnel Read** | Reading strategy: filter with a cheap index first, only read full content for matches |
-| **Two-Way Links** | Every relationship stored on both endpoints, so you can navigate in either direction |
-| **Temporal Bridge** | OM's unique property: it points backward (evidence) and forward (trigger) simultaneously |
-| **Graduated** | When an OM becomes so reliable it gets promoted into a permanent runbook |
-| **Deprecated** | When an OM has failed enough times that it's no longer trustworthy |
-| **Meta-Pattern** | A strategy that appears across multiple OMs — a "pattern of patterns" |
-| **Hit** | One successful recall + application of an OM entry (tracks how useful it is) |
-| **Confidence** | Reliability level of an OM: low (new) → medium (verified) → high (battle-tested) |
+---
 
 ## Who Is This For
 
-- **AI/Agent developers** building agent knowledge systems
+- **AI/Agent developers** building knowledge systems for agents
 - **DevOps/SRE teams** wanting AI-assisted operations
 - **Knowledge workers** designing personal AI workflows
 - **Cursor/Claude/Codex users** optimizing their skill configurations
@@ -192,6 +178,21 @@ These patterns are platform-agnostic. They work with:
 - Claude Code / Cursor (SKILL.md format)
 - OpenAI Codex CLI
 - Any LLM agent that can read markdown instructions
+
+## Glossary
+
+| Term | Meaning |
+|------|---------|
+| **Token** | Unit of text an LLM processes. More consumed = less room for reasoning |
+| **Context window** | Total text an LLM can see at once — like a desk with limited surface area |
+| **Skill** | Structured markdown file that tells an AI agent how to perform a specific task |
+| **OM (Operational Memory)** | A "lesson learned" entry with trigger conditions, better action, and lifecycle |
+| **SPAR** | Sense → Plan → Act → Reflect. Cognitive loop for learning agents |
+| **Funnel Read** | Filter with cheap index first, read full content only for matches |
+| **Two-Way Links** | Relationships stored on both endpoints for bidirectional navigation |
+| **Temporal Bridge** | OM points backward (evidence) and forward (trigger) simultaneously |
+| **Graduated** | OM promoted to permanent runbook after proving reliability |
+| **Confidence** | OM reliability: low (new) → medium (verified) → high (battle-tested) |
 
 ## License
 
