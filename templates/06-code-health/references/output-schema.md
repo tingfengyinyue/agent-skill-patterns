@@ -2,7 +2,7 @@
 
 Use Markdown for the human report. Keep the following structure stable so it can later be rendered into PR comments or machine-readable summaries.
 
-    # Project Health Code Review
+    # Code Health Review
 
     Verdict: BLOCK | CONCERNS | PASS WITH NOTES
     Base: <fixed point>

@@ -136,7 +136,7 @@ agent-skill-patterns/
 │   ├── 03-cross-validator/        # 交叉引用一致性检查
 │   ├── 04-workflow-engine/        # 状态机驱动工作流 + SPAR
 │   ├── 05-data-reporter/          # 查询 → 计算 → 可视化
-│   └── 06-project-health-code-review/ # 仓库级、对抗式 Code Review
+│   └── 06-code-health/              # 仓库级、对抗式 Code Review
 │
 ├── knowledge-base/                # 即用型脚手架
 │   ├── services/                  # 服务文档（自动生成）
@@ -157,9 +157,9 @@ agent-skill-patterns/
 | **03 交叉验证型** | 跨多份文档检查一致性 | 双向依赖核对 |
 | **04 工作流引擎型** | 状态机驱动的运维工作流 | 完整 SPAR 集成 + 任务路由 |
 | **05 数据报表型** | 并行查询 → 增量计算 → 可视化 | 今日 vs 昨日 + 变化率 |
-| **06 项目健康度 Code Review** | 从功能、架构、资源、稳定性和安全等维度审查整个仓库变更 | 独立维护者/攻击者审查 + 有限证据辩论 |
+| **06 Code Health Review** | 从功能、架构、资源、稳定性和安全等维度审查整个仓库变更 | 独立维护者/攻击者审查 + 有限证据辩论 |
 
-模板 06 提供英文运行手册 [SKILL.md](../../templates/06-project-health-code-review/SKILL.md) 和中文配套文档 [SKILL.zh-CN.md](../../templates/06-project-health-code-review/SKILL.zh-CN.md)。
+模板 06 提供英文运行手册 [SKILL.md](../../templates/06-code-health/SKILL.md) 和中文配套文档 [SKILL.zh-CN.md](../../templates/06-code-health/SKILL.zh-CN.md)。
 
 ### 知识库架构
 

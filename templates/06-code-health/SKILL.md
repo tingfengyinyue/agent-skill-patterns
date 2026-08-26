@@ -1,9 +1,9 @@
 ---
-name: project-health-code-review
+name: code-health
 description: Repository-level code review that evaluates a change globally across requirements, architecture, cleanliness, functionality, memory/resource usage, performance, reliability, security, operations, and tests. Use when reviewing a branch, pull request, commit range, bug fix, feature, refactor, or work-in-progress in one of the user's local projects; build repository context and change impact before judging individual lines.
 ---
 
-# Project Health Code Review
+# Code Health Review
 
 ## Purpose
 

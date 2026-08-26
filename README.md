@@ -136,7 +136,7 @@ agent-skill-patterns/
 │   ├── 03-cross-validator/        # Cross-reference consistency checks
 │   ├── 04-workflow-engine/        # State-machine driven workflows + SPAR
 │   ├── 05-data-reporter/          # Query → compute → visualize
-│   └── 06-project-health-code-review/ # Repository-level, adversarial code review
+│   └── 06-code-health/              # Repository-level, adversarial code review
 │
 ├── knowledge-base/                # Ready-to-use scaffold
 │   ├── services/                  # Service documentation (auto-generated)
@@ -157,9 +157,9 @@ agent-skill-patterns/
 | **03 Cross Validator** | Checks consistency across multiple documents | Bidirectional dependency verification |
 | **04 Workflow Engine** | State-machine driven operational workflows | Full SPAR integration + task routing |
 | **05 Data Reporter** | Parallel queries → delta computation → visualization | Today vs yesterday with change rates |
-| **06 Project Health Code Review** | Repository-level review across functionality, architecture, resources, reliability, and security | Independent maintainer/adversarial passes with bounded evidence-based debate |
+| **06 Code Health Review** | Repository-level review across functionality, architecture, resources, reliability, and security | Independent maintainer/adversarial passes with bounded evidence-based debate |
 
-Template 06 includes the English runtime manual in [SKILL.md](templates/06-project-health-code-review/SKILL.md) and a Chinese companion in [SKILL.zh-CN.md](templates/06-project-health-code-review/SKILL.zh-CN.md).
+Template 06 includes the English runtime manual in [SKILL.md](templates/06-code-health/SKILL.md) and a Chinese companion in [SKILL.zh-CN.md](templates/06-code-health/SKILL.zh-CN.md).
 
 ### Knowledge Base Architecture
 
