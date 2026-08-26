@@ -21,6 +21,14 @@ Use Markdown for the human report. Keep the following structure stable so it can
     - Failure/retry/cancel paths:
     - Tests and checks run:
 
+    ## Code quality and Code Rot baseline
+    - Hotspots:
+    - Complexity/duplication indicators:
+    - Dead/obsolete path indicators:
+    - Test/observability decay:
+    - Architecture/documentation drift:
+    - This change: improves | unchanged | depends on | worsens the baseline
+
     ## Independent review positions
     ### Maintainer
     - Summary:

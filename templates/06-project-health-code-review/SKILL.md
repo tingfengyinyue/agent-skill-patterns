@@ -19,6 +19,7 @@ This skill is a review skill, not an auto-fixer. Do not modify code, create trac
 - Do not confuse faster review with better review. A human remains responsible for high-risk decisions and unresolved uncertainty.
 - Review the whole change path: intent -> entry point -> state/data flow -> side effects -> failure/retry/cancel path -> observability -> tests -> rollback or compatibility.
 - Use two independent reviewer roles before debate. Independent first-pass reasoning reduces anchoring; debate is for resolving evidence-backed disagreements, not for generating more opinions.
+- Treat code-writing quality and Code Rot as one maintainability axis: review both what the change does now and whether it makes the repository harder to change later.
 
 See references/research-foundations.md for the papers and design decisions derived from them.
 
@@ -81,6 +82,7 @@ Mark each change with:
 - state impact: database, cache, queue, files, sessions, credentials, browser state;
 - runtime impact: memory, CPU, IO, network, goroutines/tasks, connection pools, model tokens;
 - operational impact: deploy order, migration, rollback, feature flag, alerting, compatibility.
+- maintainability impact: complexity, duplication, dead/obsolete paths, churn hotspots, test decay, and architecture drift.
 
 Prioritize findings using severity and confidence, not a decorative overall score:
 
@@ -98,7 +100,7 @@ Dispatch two isolated reviewer roles in parallel when subagents are available. G
 Maintainer reviewer:
 
 - functionality and requirement coverage;
-- cleanliness, maintainability, and YAGNI;
+- code-writing quality, maintainability, YAGNI, and Code Rot baseline;
 - architecture, contracts, callers, and downstream impact;
 - tests, observability, rollout, and compatibility.
 
@@ -107,7 +109,7 @@ Adversarial reviewer:
 - invalid input, partial failure, timeout, retry, cancellation, and duplicate execution;
 - memory/resource ownership, unbounded growth, connection/task/handle cleanup, and backpressure;
 - security boundaries, permissions, secrets, sandbox, prompt/tool input, and data leakage;
-- concurrency, data consistency, rollback, and operational failure.
+- concurrency, data consistency, rollback, operational failure, and whether the change adds another layer to an existing maintenance hotspot.
 
 If no subagent mechanism is available, perform two clearly separated passes in one context and do not let the second pass see the first pass's findings until its own candidate list is complete.
 
@@ -121,7 +123,7 @@ The debate has a fixed budget: at most two rounds and at most eight disagreement
 
 ### 6. Review the change through the project-health lenses
 
-Read references/review-lenses.md and apply only the relevant lenses. Always cover functionality, cleanliness, architecture, tests, and reliability. Add resource/performance/security/operations lenses when the risk map triggers them.
+Read references/review-lenses.md and references/code-rot.md and apply only the relevant lenses. Always cover functionality, code-writing quality, Code Rot, architecture, tests, and reliability. Add resource/performance/security/operations lenses when the risk map triggers them.
 
 For every finding, answer:
 
@@ -137,6 +139,7 @@ Run only relevant, non-production checks discovered from the repository. Prefer 
 - Python: targeted pytest, ruff, pyright, async tests;
 - TypeScript: package-scoped typecheck, lint, contract tests, targeted unit/E2E;
 - Go: targeted go test, go vet, race tests when relevant, golangci-lint if configured;
+- Code Rot: run scripts/analyze_code_rot.py when repository history is available, then verify hotspots with callers, tests, and local rules;
 - resource checks: existing benchmarks, load tests, tracemalloc/memray, pprof, or Node heap tooling only when the change justifies them.
 
 Never run production verification, destructive migration, real data repair, or live external side effects automatically. Treat any command with a production environment selector as human-approved only.
@@ -148,12 +151,13 @@ Use this order:
 1. Verdict: BLOCK, CONCERNS, or PASS WITH NOTES.
 2. Executive summary: what changed and the main system-level risk.
 3. Change map: entry points, state/data flow, affected modules, callers, and tests.
-4. Review positions: maintainer and adversarial summaries before debate.
-5. Debate outcomes: resolved, rejected, or unresolved findings with evidence.
-6. Findings: ordered by severity, each with evidence and confidence.
-7. Missing validation: tests, profiling, contract checks, or operational checks not performed.
-8. What looks sound: important paths or safeguards that were verified.
-9. Open questions and assumptions.
+4. Code quality and Code Rot baseline: hotspots, indicators, and whether this change improves or worsens them.
+5. Review positions: maintainer and adversarial summaries before debate.
+6. Debate outcomes: resolved, rejected, or unresolved findings with evidence.
+7. Findings: ordered by severity, each with evidence and confidence.
+8. Missing validation: tests, profiling, contract checks, or operational checks not performed.
+9. What looks sound: important paths or safeguards that were verified.
+10. Open questions and assumptions.
 
 Do not bury a P0/P1 finding inside a long checklist. Do not report style issues already enforced by tooling unless the change bypasses or misconfigures the tooling.
 
@@ -172,6 +176,7 @@ Load references/project-profiles.md when reviewing the user's known local projec
 - Conflicting project instructions: prefer the most local, current repository rule and call out the conflict.
 - Large diff: review the change map and high-risk paths first, then state the unreviewed surface.
 - Debate overload: reduce the packet set to P0/P1 and merge duplicate findings before debating.
+- Missing history: mark churn/age conclusions as unavailable rather than guessing; continue with static rot indicators and graph evidence.
 
 ## Non-goals
 

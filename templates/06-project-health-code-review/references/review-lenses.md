@@ -17,6 +17,22 @@ Apply these as questions tied to evidence, not as a checklist that must produce 
 - Are comments explaining why rather than repeating what the code does?
 - Is the change smaller or more complicated than the problem requires?
 
+## Code-writing quality and Code Rot
+
+Review code quality as a time-based property. A change can be locally correct while still adding another layer to a repository that is already difficult to maintain.
+
+Check:
+
+- complexity accumulation: long functions, deep nesting, repeated conditionals, large files, and too many parameters;
+- duplication and parallel implementations: similar logic that will drift, duplicate adapters, repeated validation, and copy-pasted fixes;
+- dead or obsolete paths: unused functions/classes/routes, stale feature flags, commented-out code, TODO/FIXME/HACK markers, deprecated compatibility layers, and unreachable branches;
+- hotspot risk: high-churn files/functions, recent edits concentrated in already complex modules, and changes that expand a maintenance hotspot;
+- architecture drift: new dependency direction violations, bypassed abstractions, cross-domain imports, and documentation/ADR mismatch;
+- test decay: changed behavior without meaningful tests, skipped or flaky tests, tests that assert implementation details, and critical paths with no owner;
+- dependency/config drift: stale packages, duplicate libraries, inconsistent configuration, and runtime behavior no longer matching documentation.
+
+Do not call a file “rotten” from one smell. Require at least two independent indicators or one strong indicator plus a concrete maintenance consequence. Distinguish pre-existing rot from rot introduced or worsened by the change. Report a pre-existing issue as blocking only when the change relies on or expands it.
+
 ## Architecture and global flow
 
 - Does dependency direction respect the repository's declared layers?
