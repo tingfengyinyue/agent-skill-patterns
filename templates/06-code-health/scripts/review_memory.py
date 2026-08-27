@@ -42,10 +42,15 @@ def ensure_root(root: Path) -> tuple[Path, Path, Path]:
     index, memories, audit = paths(root)
     root.mkdir(parents=True, exist_ok=True)
     memories.mkdir(parents=True, exist_ok=True)
+    root.chmod(0o700)
+    memories.chmod(0o700)
     if not index.exists():
         write_index(index, [])
+    else:
+        index.chmod(0o600)
     if not audit.exists():
         audit.touch()
+    audit.chmod(0o600)
     return index, memories, audit
 
 
@@ -78,12 +83,14 @@ def write_index(index: Path, memories: list[dict[str, Any]]) -> None:
         handle.write(text)
         temporary = Path(handle.name)
     temporary.replace(index)
+    index.chmod(0o600)
 
 
 def audit(audit_path: Path, action: str, detail: str) -> None:
     safe_detail = re.sub(r"[\r\n\t]+", " ", detail).strip()
     with audit_path.open("a", encoding="utf-8") as handle:
         handle.write(f"{now()} {action} {safe_detail}\n")
+    audit_path.chmod(0o600)
 
 
 def as_list(value: Any) -> list[str]:
@@ -179,6 +186,7 @@ def record_memory(root: Path, input_path: Path, replace: bool) -> None:
 
     body_path = memories_dir / f"{memory_id}.md"
     body_path.write_text(memory_body(record), encoding="utf-8")
+    body_path.chmod(0o600)
     entry = {key: value for key, value in record.items() if key not in {"what_was_missed", "missed_signal", "root_cause", "detection_rule", "negative_control", "notes"}}
     entry["file"] = body_path.name
     entry["action"] = record["detection_rule"]
