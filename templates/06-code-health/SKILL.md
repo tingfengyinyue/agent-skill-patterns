@@ -1,13 +1,22 @@
 ---
 name: code-health
-description: Repository-level code review that evaluates a change globally across requirements, architecture, cleanliness, functionality, memory/resource usage, performance, reliability, security, operations, and tests. Use when reviewing a branch, pull request, commit range, bug fix, feature, refactor, or work-in-progress in one of the user's local projects; build repository context and change impact before judging individual lines.
+description: Diff-first repository code review with concrete file/line findings, call-chain tracing, protocol and resource checks, Code Rot analysis, and bounded maintainer/adversarial debate. Use when reviewing a branch, pull request, commit range, uncommitted worktree changes, bug fix, feature, refactor, or work-in-progress in a local project.
 ---
 
 # Code Health Review
 
 ## Purpose
 
-Review a change as a maintainer responsible for the whole project, not as a local diff critic. Reconstruct the repository's purpose and dependency map first, then connect the change to requirements, callers, state transitions, tests, and runtime resources. Report only evidence-backed findings; separate confirmed defects, high-confidence risks, and hypotheses that need profiling or human confirmation.
+Review a change first as a precise Diff reviewer, then as a maintainer responsible for the whole project. Inspect every changed hunk in its enclosing function, verify the concrete behavior and call sites, and only then expand to requirements, callers, state transitions, tests, and runtime resources. Report actionable file/line findings with a causal chain; separate confirmed defects, high-confidence risks, and hypotheses that need profiling or human confirmation.
+
+Execution priority:
+
+1. Freeze the actual change set, including staged, unstaged, and untracked worktree changes when requested.
+2. Perform a deterministic local correctness sweep before forming reviewer positions.
+3. Trace the affected system path and assess global architecture, resources, tests, and Code Rot.
+4. Use independent reviewer roles and debate only disagreements that can change the decision.
+
+A report with only a project map, generic risks, or reviewer summaries is incomplete when the change contains executable behavior.
 
 This skill is a review skill, not an auto-fixer. Do not modify code, create tracking tasks, approve/merge PRs, or run production actions unless the user explicitly asks.
 
@@ -28,22 +37,43 @@ See references/research-foundations.md for the papers and design decisions deriv
 Identify:
 
 1. repo_path: absolute repository path.
-2. fixed_point: target branch, merge-base, commit, tag, or HEAD~N. If absent, ask for it before reviewing.
+2. fixed_point: target branch, merge-base, commit, tag, or HEAD~N. For current uncommitted worktree review, use HEAD or an explicitly supplied base and include the worktree patch.
 3. spec_source: issue, PRD, task, acceptance criteria, or a clear statement that no spec exists.
 
-Pin and validate the reference before analysis:
+Pin and validate the reference before analysis. For a committed change, use:
 
     git -C <repo_path> rev-parse <fixed_point>
     git -C <repo_path> diff --stat <fixed_point>...HEAD
     git -C <repo_path> log --oneline <fixed_point>..HEAD
 
-An invalid reference or empty diff is a stop condition. Preserve existing uncommitted changes and do not use destructive Git commands.
+For a worktree review, also use:
+
+    git -C <repo_path> status --short --branch
+    git -C <repo_path> diff --stat HEAD
+    git -C <repo_path> diff --cached --stat
+    git -C <repo_path> ls-files --others --exclude-standard
+
+An invalid reference is a stop condition. An empty committed diff is not a stop condition when staged, unstaged, or untracked changes exist. Label the review as `HEAD + working tree` and preserve existing changes; do not use destructive Git commands.
+
+### 1. Freeze the change set and perform the local correctness sweep
+
+Before building reviewer positions, create a change inventory. For every changed file and untracked file:
+
+- inspect every changed hunk with enough surrounding context to identify the enclosing function/class;
+- record the exact file and line location, changed symbol, behavior changed, and nearest callers/callees;
+- compare function signatures with every call site, especially positional arguments, defaults, keyword names, and enum/string values;
+- check early `return`/`break`, loop aggregation, chunk/stream handling, exception paths, state transitions, IDs/correlation fields, bytes-versus-text semantics, and serialization boundaries;
+- compare the new behavior with the nearest existing tests and identify the smallest missing regression test.
+
+Use `references/diff-first.md`. This pass must produce concrete candidate findings before the global review. Prefer a false-positive-free short list over a long smell list.
+
+For logging, tracing, event, streaming, or metrics changes, also read `references/observability-review.md` and verify event schema, lifecycle correlation, aggregation semantics, log volume, and sampling.
 
 ## Review workflow
 
-### 1. Build the repository map before reading the diff
+### 2. Build the repository map around the changed path
 
-Read the smallest set of high-value context first:
+After the local sweep, read the smallest set of high-value context:
 
 - AGENTS.md, CLAUDE.md, CONTRIBUTING.md, coding standards, ADRs, architecture docs;
 - package manifests and lockfiles;
@@ -59,9 +89,9 @@ Use codebase-memory-mcp before broad file-by-file searching when the project is 
 
 For important changed symbols, use trace_path in both directions. If the graph is stale, say so and fall back to direct code inspection; do not present stale graph results as facts.
 
-Use scripts/collect_review_context.py to create a deterministic first-pass context bundle when useful.
+Use scripts/collect_review_context.py to create a deterministic first-pass context bundle when useful. Pass `--working-tree` when the review includes staged, unstaged, or untracked changes.
 
-### 2. Reconstruct intent and system flow
+### 3. Reconstruct intent and system flow
 
 Before judging implementation, write a short internal flow map:
 
@@ -73,7 +103,7 @@ For each changed file, classify its role: API, domain logic, orchestration, pers
 
 If the change has no usable spec, review functionality as “intent not verifiable” rather than inventing requirements. Still review safety, compatibility, and regressions.
 
-### 3. Determine blast radius and risk
+### 4. Determine blast radius and risk
 
 Mark each change with:
 
@@ -93,7 +123,7 @@ Prioritize findings using severity and confidence, not a decorative overall scor
 
 Confidence is confirmed, high, medium, or needs-runtime-verification.
 
-### 4. Run two independent review passes
+### 5. Run two independent review passes
 
 Dispatch two isolated reviewer roles in parallel when subagents are available. Give both the same repository map, fixed diff, spec, graph context, and validation facts, but do not expose either reviewer's findings to the other during the first pass.
 
@@ -115,15 +145,15 @@ If no subagent mechanism is available, perform two clearly separated passes in o
 
 Each reviewer must produce candidate findings with location, evidence, causal path, consequence, severity, confidence, and the smallest verification or fix. A reviewer must also report important paths that were checked and found sound.
 
-### 5. Debate only high-value disagreements
+### 6. Debate only high-value disagreements
 
 Use references/debate-protocol.md. Do not debate every stylistic difference. Debate any P0 or P1 finding rejected by the other reviewer, disagreements about contracts/architecture/resource lifecycle/security, and P2 disagreements that change the merge decision or require expensive runtime validation.
 
 The debate has a fixed budget: at most two rounds and at most eight disagreement packets per review. Do not use majority vote. If evidence remains insufficient, downgrade the finding to needs-runtime-verification and design the smallest distinguishing check.
 
-### 6. Review the change through the project-health lenses
+### 7. Review the change through the project-health lenses
 
-Read references/review-lenses.md and references/code-rot.md and apply only the relevant lenses. Always cover functionality, code-writing quality, Code Rot, architecture, tests, and reliability. Add resource/performance/security/operations lenses when the risk map triggers them.
+Read references/review-lenses.md, references/code-rot.md, and the observability reference when relevant. Apply only the relevant lenses, but always cover functionality, code-writing quality, Code Rot, architecture, tests, and reliability. Add resource/performance/security/operations lenses when the risk map triggers them.
 
 For every finding, answer:
 
@@ -132,7 +162,7 @@ For every finding, answer:
 3. Why does it matter in this repository and not just in the abstract?
 4. What is the smallest safe correction or verification?
 
-### 7. Validate instead of speculating
+### 8. Validate instead of speculating
 
 Run only relevant, non-production checks discovered from the repository. Prefer affected tests over an unbounded full suite, but state what was not run. Typical checks include:
 
@@ -142,22 +172,24 @@ Run only relevant, non-production checks discovered from the repository. Prefer 
 - Code Rot: run scripts/analyze_code_rot.py when repository history is available, then verify hotspots with callers, tests, and local rules;
 - resource checks: existing benchmarks, load tests, tracemalloc/memray, pprof, or Node heap tooling only when the change justifies them.
 
+For every P1/P2 candidate, run or propose the smallest discriminating check: a targeted test, call-site inspection, schema assertion, fixture, sample replay, benchmark, heap measurement, or log-query validation. Do not replace a failed relevant test with a successful compile or lint.
+
 Never run production verification, destructive migration, real data repair, or live external side effects automatically. Treat any command with a production environment selector as human-approved only.
 
-### 8. Produce a global review report
+### 9. Produce a global review report
 
 Use this order:
 
 1. Verdict: BLOCK, CONCERNS, or PASS WITH NOTES.
 2. Executive summary: what changed and the main system-level risk.
-3. Change map: entry points, state/data flow, affected modules, callers, and tests.
-4. Code quality and Code Rot baseline: hotspots, indicators, and whether this change improves or worsens them.
-5. Review positions: maintainer and adversarial summaries before debate.
-6. Debate outcomes: resolved, rejected, or unresolved findings with evidence.
-7. Findings: ordered by severity, each with evidence and confidence.
+3. Change-set inventory and call-chain map.
+4. Findings: concrete file/line issues ordered by severity, with evidence, causal chain, project consequence, and smallest fix or verification.
+5. Code quality and Code Rot baseline: hotspots, indicators, and whether this change improves or worsens them.
+6. Review positions: maintainer and adversarial summaries before debate.
+7. Debate outcomes: resolved, rejected, or unresolved findings with evidence.
 8. Missing validation: tests, profiling, contract checks, or operational checks not performed.
-9. What looks sound: important paths or safeguards that were verified.
-10. Open questions and assumptions.
+9. Verified strengths: important paths or safeguards that were checked.
+10. Spec alignment and open questions.
 
 Do not bury a P0/P1 finding inside a long checklist. Do not report style issues already enforced by tooling unless the change bypasses or misconfigures the tooling.
 
@@ -169,13 +201,14 @@ Load references/project-profiles.md when reviewing the user's known local projec
 
 ## Failure handling
 
-- Missing fixed point: ask for the target branch or commit.
+- Missing fixed point: use HEAD for an explicitly requested worktree review; otherwise ask for the target branch or commit.
 - Missing spec: report functional intent as unverifiable and continue with safety/compatibility review.
 - Stale or absent graph: fall back to code and tests; downgrade confidence for impact claims.
 - No executable test path: report the gap; do not treat a successful lint as functional validation.
 - Conflicting project instructions: prefer the most local, current repository rule and call out the conflict.
 - Large diff: review the change map and high-risk paths first, then state the unreviewed surface.
 - Debate overload: reduce the packet set to P0/P1 and merge duplicate findings before debating.
+- Empty committed diff with worktree changes: review the staged/unstaged/untracked change set and label the base/head accordingly.
 - Missing history: mark churn/age conclusions as unavailable rather than guessing; continue with static rot indicators and graph evidence.
 
 ## Non-goals

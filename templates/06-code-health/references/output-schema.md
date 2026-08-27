@@ -29,6 +29,20 @@ Use Markdown for the human report. Keep the following structure stable so it can
     - Architecture/documentation drift:
     - This change: improves | unchanged | depends on | worsens the baseline
 
+    ## Standards and repository rules
+    - Rules found:
+    - Relevant conventions:
+    - Conflicts or missing standards:
+
+    ## Findings
+
+    ### [P1][high confidence] Short title
+    - Location: path/file.ext:line
+    - Lens: functionality | cleanliness | architecture | memory | performance | reliability | security | operations | tests
+    - Evidence: <specific code path, graph result, test output, or config>
+    - Risk: <project-specific consequence>
+    - Recommendation: <smallest safe fix or verification>
+
     ## Independent review positions
     ### Maintainer
     - Summary:
@@ -48,23 +62,23 @@ Use Markdown for the human report. Keep the following structure stable so it can
     - Decision reason:
     - Next verification:
 
-    ## Findings
-
-    ### [P1][high confidence] Short title
-    - Location: path/file.ext:line
-    - Lens: functionality | cleanliness | architecture | memory | performance | reliability | security | operations | tests
-    - Evidence: <specific code path, graph result, test output, or config>
-    - Risk: <project-specific consequence>
-    - Recommendation: <smallest safe fix or verification>
-
     ## Missing validation
     - <check not run and why>
 
     ## Verified strengths
     - <important safeguard or path checked>
 
+    ## Spec alignment
+    - Covered:
+    - Not verifiable:
+    - Out of scope side effects:
+
     ## Open questions
     - <assumption or runtime fact that needs confirmation>
+
+## Finding quality gate
+
+When the change contains executable behavior, the report must include concrete findings or explicitly state that the focused sweep found none. Every finding needs an exact file/line (or an explicit missing control), code/test/config evidence, a causal chain to the project-specific consequence, severity, confidence, and the smallest fix or distinguishing verification. Do not replace this with only an architecture summary, smell list, or reviewer agreement.
 
 ## Finding rules
 

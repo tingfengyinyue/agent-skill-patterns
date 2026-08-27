@@ -47,9 +47,19 @@ def discover_files(repo: Path) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("repo", type=Path)
-    parser.add_argument("base", help="git ref used as the review fixed point")
+    parser.add_argument(
+        "base",
+        nargs="?",
+        default="HEAD",
+        help="git ref used as the review fixed point (default: HEAD)",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--diff-context", type=int, default=20)
+    parser.add_argument(
+        "--working-tree",
+        action="store_true",
+        help="include staged, unstaged, and untracked workspace changes",
+    )
     args = parser.parse_args()
 
     repo = args.repo.resolve()
@@ -63,12 +73,14 @@ def main() -> int:
         raise SystemExit(base_sha)
 
     files = discover_files(repo)
+    change_set = "HEAD + working tree" if args.working_tree else f"{args.base}...HEAD"
     sections = [
-        "# Project Review Context",
+        "# Code Health Review Context",
         "",
         f"- Repository: {repo}",
         f"- Base: {args.base} ({base_sha})",
         f"- HEAD: {head_sha}",
+        f"- Change set: {change_set}",
         "- Working tree:",
         "",
         "~~~text",
@@ -78,11 +90,11 @@ def main() -> int:
         "~~~text",
         run(repo, "log", "--oneline", f"{args.base}..HEAD"),
         "~~~",
-        "## Changed files",
+        "## Committed changed files",
         "~~~text",
         run(repo, "diff", "--name-status", f"{args.base}...HEAD"),
         "~~~",
-        "## Diff statistics",
+        "## Committed diff statistics",
         "~~~text",
         run(repo, "diff", "--stat", f"{args.base}...HEAD"),
         "~~~",
@@ -92,10 +104,52 @@ def main() -> int:
     sections.extend(
         [
             "",
-            "## Diff with enclosing context",
+            "## Committed diff with enclosing context",
             "~~~diff",
-            run(repo, "diff", f"--unified={args.diff_context}", f"{args.base}...HEAD"),
+            run(
+                repo,
+                "diff",
+                "--no-ext-diff",
+                f"--unified={args.diff_context}",
+                f"{args.base}...HEAD",
+            ),
             "~~~",
+        ]
+    )
+
+    if args.working_tree:
+        sections.extend(
+            [
+                "",
+                "## Unstaged worktree changes",
+                "~~~diff",
+                run(
+                    repo,
+                    "diff",
+                    "--no-ext-diff",
+                    f"--unified={args.diff_context}",
+                    "HEAD",
+                ),
+                "~~~",
+                "## Staged worktree changes",
+                "~~~diff",
+                run(
+                    repo,
+                    "diff",
+                    "--cached",
+                    "--no-ext-diff",
+                    f"--unified={args.diff_context}",
+                ),
+                "~~~",
+                "## Untracked files",
+                "~~~text",
+                run(repo, "ls-files", "--others", "--exclude-standard"),
+                "~~~",
+            ]
+        )
+
+    sections.extend(
+        [
             "",
             "## Review limitations",
             "This bundle is evidence for review, not a verdict. Read the listed context files, inspect callers/callees, and run relevant checks before making claims.",
