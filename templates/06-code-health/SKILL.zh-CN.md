@@ -17,6 +17,7 @@
 - 完整检查链路：需求 → 入口 → 数据/状态流 → 副作用 → 失败/重试/取消 → 监控 → 测试 → 回滚/兼容性。
 - 将代码书写质量和代码腐烂（Code Rot）视为同一个可维护性维度：既检查本次代码现在是否能工作，也检查它是否让仓库更难理解、更难测试和更难修改。
 - 报告不能只有项目地图、通用风险或 Agent 总结；只要变更包含可执行代码，就必须先给出带文件和行号的具体发现，或明确说明逐 Diff 检查没有发现问题。
+- 已确认的 Review 漏检应沉淀为候选经验，但不能因为一次不确定意见就自动修改核心规则。
 
 ## 必要输入
 
@@ -33,6 +34,12 @@
     git -C <repo_path> log --oneline <fixed_point>..HEAD
 
 参考点无效时停止。若审查工作区，还要检查 `git diff HEAD`、`git diff --cached` 和未跟踪文件。提交 Diff 为空但工作区存在改动时不能停止，应标记为 `HEAD + working tree`。保留用户已有改动，不使用破坏性 Git 命令。
+
+审查前从本地私有记忆库召回最多 3 条相关经验，不要把经验直接当成事实：
+
+    python3 scripts/review_memory.py select --repo <repo-name> --service <service> --tag <change-area>
+
+记忆库默认位于 `~/.codex/code-health-memory/`，不要将其中的真实项目路径、生产证据、用户数据或凭据写入公开仓库。
 
 ## Review 流程（先 Diff，后全局）
 
@@ -183,7 +190,7 @@
 - high：根据真实代码路径可以高度推断；
 - needs-runtime-verification：需要依赖流量、数据规模、框架行为或部署配置验证。
 
-### 7. 运行针对性验证
+### 8. 运行针对性验证
 
 只运行仓库中已定义的、与变更相关的非生产检查。说明哪些检查没有运行。
 
@@ -213,9 +220,17 @@
 8. 分歧辩论结果；
 9. 未执行的测试、Profiling 和运维验证；
 10. 已确认正常的关键路径；
-11. Spec 对齐情况、未解决的问题和假设。
+11. Learning context、Spec 对齐情况、未解决的问题和假设。
 
 不要把 P0/P1 隐藏在很长的检查清单中。不要把两个 Agent 的一致意见当成证据。
+
+### 10. 只从确认过的漏检中学习
+
+如果用户或后续证据确认上一次 Review 漏掉了真实问题，先将原因归类为上下文、推理、检测器、验证、工具或范围失败，再记录 `candidate` 经验：
+
+    python3 scripts/review_memory.py record --input /path/to/missed-review.json
+
+经验必须包含证据、检测规则、回归测试和负向样本。只有经过人工批准、真实证据和回归验证，才能晋级为 `validated`；至少在两个独立上下文中复现后，才考虑晋级为 `global-rule`。使用 `supersede` 或 `invalidated` 处理被新证据推翻的经验。
 
 ## 非目标
 

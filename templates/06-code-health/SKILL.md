@@ -1,6 +1,6 @@
 ---
 name: code-health
-description: Diff-first repository code review with concrete file/line findings, call-chain tracing, protocol and resource checks, Code Rot analysis, and bounded maintainer/adversarial debate. Use when reviewing a branch, pull request, commit range, uncommitted worktree changes, bug fix, feature, refactor, or work-in-progress in a local project.
+description: Diff-first repository code review with concrete file/line findings, call-chain tracing, protocol and resource checks, Code Rot analysis, bounded maintainer/adversarial debate, and evidence-gated learning from confirmed missed findings. Use when reviewing a branch, pull request, commit range, uncommitted worktree changes, bug fix, feature, refactor, or work-in-progress in a local project.
 ---
 
 # Code Health Review
@@ -12,9 +12,10 @@ Review a change first as a precise Diff reviewer, then as a maintainer responsib
 Execution priority:
 
 1. Freeze the actual change set, including staged, unstaged, and untracked worktree changes when requested.
-2. Perform a deterministic local correctness sweep before forming reviewer positions.
-3. Trace the affected system path and assess global architecture, resources, tests, and Code Rot.
-4. Use independent reviewer roles and debate only disagreements that can change the decision.
+2. Load a small set of relevant, evidence-backed review memories without treating them as facts.
+3. Perform a deterministic local correctness sweep before forming reviewer positions.
+4. Trace the affected system path and assess global architecture, resources, tests, and Code Rot.
+5. Use independent reviewer roles and debate only disagreements that can change the decision.
 
 A report with only a project map, generic risks, or reviewer summaries is incomplete when the change contains executable behavior.
 
@@ -29,6 +30,7 @@ This skill is a review skill, not an auto-fixer. Do not modify code, create trac
 - Review the whole change path: intent -> entry point -> state/data flow -> side effects -> failure/retry/cancel path -> observability -> tests -> rollback or compatibility.
 - Use two independent reviewer roles before debate. Independent first-pass reasoning reduces anchoring; debate is for resolving evidence-backed disagreements, not for generating more opinions.
 - Treat code-writing quality and Code Rot as one maintainability axis: review both what the change does now and whether it makes the repository harder to change later.
+- Treat confirmed post-review misses as learning signals, not as automatic rule changes. Store the evidence, failure category, detection rule, regression test, and negative control before promoting a lesson.
 
 See references/research-foundations.md for the papers and design decisions derived from them.
 
@@ -68,6 +70,12 @@ Before building reviewer positions, create a change inventory. For every changed
 Use `references/diff-first.md`. This pass must produce concrete candidate findings before the global review. Prefer a false-positive-free short list over a long smell list.
 
 For logging, tracing, event, streaming, or metrics changes, also read `references/observability-review.md` and verify event schema, lifecycle correlation, aggregation semantics, log volume, and sampling.
+
+Before finalizing the sweep, use `references/review-learning-loop.md` and load at most three relevant memories:
+
+    python3 scripts/review_memory.py select --repo <repo-name> --service <service> --tag <change-area>
+
+Use them to add targeted checks. Record in the report which memories were applied, contradicted, confirmed, or unused.
 
 ## Review workflow
 
@@ -195,6 +203,18 @@ Do not bury a P0/P1 finding inside a long checklist. Do not report style issues 
 
 The detailed output contract is in references/output-schema.md.
 
+### 10. Learn only from confirmed post-review feedback
+
+If the user or later evidence confirms that a previous review missed a real issue, perform a short reflection before changing any rule. Classify the miss as context, reasoning, detector, validation, tool, or scope failure. Create a `candidate` memory with evidence, detection rule, required regression test, and negative control:
+
+    python3 scripts/review_memory.py record --input /path/to/missed-review.json
+
+Do not record uncertain reviewer opinions as lessons. Promote only with explicit human approval:
+
+    python3 scripts/review_memory.py promote <id> --to validated --approved-by <human>
+
+Promote to `global-rule` only after independent confirmation in at least two contexts. Use `supersede` or `invalidated` when later evidence corrects a lesson. Never silently edit the core Skill or publish private project evidence.
+
 ## Project adapters
 
 Load references/project-profiles.md when reviewing the user's known local projects. These profiles select risk lenses and safe validation commands; they do not override repository-local rules.
@@ -210,6 +230,7 @@ Load references/project-profiles.md when reviewing the user's known local projec
 - Debate overload: reduce the packet set to P0/P1 and merge duplicate findings before debating.
 - Empty committed diff with worktree changes: review the staged/unstaged/untracked change set and label the base/head accordingly.
 - Missing history: mark churn/age conclusions as unavailable rather than guessing; continue with static rot indicators and graph evidence.
+- Missing or unreadable review memory: continue the review, record that no memory was applied, and do not invent prior lessons.
 
 ## Non-goals
 

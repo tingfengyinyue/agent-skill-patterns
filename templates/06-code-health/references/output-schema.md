@@ -34,6 +34,12 @@ Use Markdown for the human report. Keep the following structure stable so it can
     - Relevant conventions:
     - Conflicts or missing standards:
 
+    ## Learning context
+    - Memories applied:
+    - Memories contradicted or confirmed:
+    - Previous-review feedback:
+    - New candidate lesson: none | <memory id>
+
     ## Findings
 
     ### [P1][high confidence] Short title

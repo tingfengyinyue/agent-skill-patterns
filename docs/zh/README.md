@@ -161,6 +161,8 @@ agent-skill-patterns/
 
 模板 06 提供英文运行手册 [SKILL.md](../../templates/06-code-health/SKILL.md) 和中文配套文档 [SKILL.zh-CN.md](../../templates/06-code-health/SKILL.zh-CN.md)。
 
+已确认的 Review 漏检可以沉淀为本地私有、经过证据门控的经验，并在后续 Review 中召回；真实项目证据不会进入公开模板。
+
 ### 知识库架构
 
 四层结构，详细程度递增、更新频率递减：

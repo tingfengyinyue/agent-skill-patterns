@@ -161,6 +161,8 @@ agent-skill-patterns/
 
 Template 06 includes the English runtime manual in [SKILL.md](templates/06-code-health/SKILL.md) and a Chinese companion in [SKILL.zh-CN.md](templates/06-code-health/SKILL.zh-CN.md).
 
+Confirmed post-review misses can be stored as private, evidence-gated review memories and recalled on later reviews; private project evidence is never part of the public template.
+
 ### Knowledge Base Architecture
 
 Four layers with increasing detail and decreasing update frequency:
